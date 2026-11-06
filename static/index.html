@@ -160,7 +160,7 @@
       <div class="row" style="margin-top:1rem">
         <div class="field" style="flex:1 1 100%">
           <label for="messages_file_path">Файл для сохранения (пусто = <code>logs/syslog.log</code> в каталоге данных)</label>
-          <input class="control" id="messages_file_path" name="messages_file_path" type="text" placeholder="logs/syslog.log или /data/syslog.log" autocomplete="off" />
+          <input class="control" id="messages_file_path" name="messages_file_path" type="text" placeholder="logs/syslog.log или абсолютный путь" autocomplete="off" />
         </div>
       </div>
       <div class="field check-row" style="flex:1 1 100%; align-items:center; margin-top:0.75rem">
@@ -169,8 +169,8 @@
       </div>
       <div class="msg" id="form-msg"></div>
       <p class="hint">
-        В Docker каталог данных — <code>/data</code> (том). Относительный путь считается от него.
-        В Docker через compose проброшен диапазон <strong>5000–5999</strong> (UDP/TCP) — выберите порт syslog в этом диапазоне или настройте проброс вручную.
+        Каталог данных задаётся переменной окружения <code>DATA_DIR</code> (по умолчанию <code>./data</code>).
+        Относительный путь к файлу логов считается от этого каталога. Убедитесь, что выбранный порт syslog не занят другим процессом.
       </p>
     </div>
 

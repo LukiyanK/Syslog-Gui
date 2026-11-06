@@ -20,12 +20,12 @@ def resolve_messages_file_path(data_dir: Path, user_path: str) -> Path:
 
 @dataclass
 class SyslogConfig:
-    # По умолчанию непривилегированный порт (в Docker без root порт <1024 недоступен).
+    # По умолчанию непривилегированный порт (порт <1024 обычно требует root).
     listen_port: int = 5514
     listen_protocol: ListenProtocol = "udp"
     # Запись входящих сообщений в файл (одна строка на сообщение).
     persist_to_file: bool = False
-    # Путь к файлу внутри контейнера/на диске; пусто — data_dir/logs/syslog.log
+    # Путь к файлу на диске (или относительно DATA_DIR); пусто — data_dir/logs/syslog.log
     messages_file_path: str = ""
 
     def to_dict(self) -> dict[str, Any]:

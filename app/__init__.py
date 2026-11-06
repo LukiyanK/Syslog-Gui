@@ -1,1 +1,1 @@
-# Syslog Docker GUI application package.
+# Syslog Web GUI application package.
