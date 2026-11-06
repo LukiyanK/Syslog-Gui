@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Syslog — настройки</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e8eef7;
+      --muted: #8b9bb4;
+      --accent: #3d8bfd;
+      --border: #2d3a4f;
+      --error: #f87171;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+    h1 { font-size: 1.35rem; font-weight: 600; margin: 0 0 0.5rem; }
+    p.lead { margin: 0 0 1.5rem; color: var(--muted); font-size: 0.95rem; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.35rem; }
+    .row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; }
+    .field { flex: 1 1 160px; }
+    .row.listen-row .field {
+      flex: 1 1 calc(50% - 0.5rem);
+      min-width: 0;
+    }
+    .control {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      height: 2.75rem;
+      min-height: 2.75rem;
+      max-height: 2.75rem;
+      margin: 0;
+      padding: 0 0.75rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background-color: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+      line-height: 1.25;
+    }
+    .row.listen-row .field .control {
+      vertical-align: middle;
+    }
+    select.control {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      cursor: pointer;
+      padding-right: 2rem;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b9bb4' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.65rem center;
+      background-size: 0.75rem;
+    }
+    input[type="number"].control { -moz-appearance: textfield; }
+    input[type="number"].control::-webkit-outer-spin-button,
+    input[type="number"].control::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="text"].control:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .check-row input[type="checkbox"] {
+      width: 1.1rem;
+      height: 1.1rem;
+      accent-color: var(--accent);
+    }
+    .check-row label { margin: 0; cursor: pointer; font-size: 0.95rem; color: var(--text); }
+    button {
+      padding: 0.6rem 1.1rem;
+      border-radius: 8px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    button.btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button.btn-danger {
+      background: #7f1d1d;
+      border: 1px solid #991b1b;
+    }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .msg { margin-top: 0.75rem; font-size: 0.9rem; min-height: 1.25rem; }
+    .msg.error { color: var(--error); }
+    .msg.ok { color: #4ade80; }
+    .log-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+    .log-head h2 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+    pre {
+      margin: 0;
+      padding: 1rem;
+      background: var(--bg);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 0.8rem;
+      overflow: auto;
+      max-height: 480px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .hint { font-size: 0.8rem; color: var(--muted); margin-top: 0.75rem; }
+    .ws-ok { color: #4ade80; }
+    .ws-bad { color: var(--error); }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Syslog сервер</h1>
+    <p class="lead">Настройки применяются автоматически. Поток сообщений — через WebSocket в реальном времени. Запись на диск только при включённом флаге ниже.</p>
+
+    <div class="card" id="cfg-panel">
+      <div class="row listen-row">
+        <div class="field">
+          <label for="listen_port">Порт syslog</label>
+          <input class="control" id="listen_port" name="listen_port" type="number" min="1" max="65535" required />
+        </div>
+        <div class="field">
+          <label for="listen_protocol">Протокол</label>
+          <select class="control" id="listen_protocol" name="listen_protocol">
+            <option value="udp">UDP</option>
+            <option value="tcp">TCP</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:1rem">
+        <div class="field" style="flex:1 1 100%">
+          <label for="messages_file_path">Файл для сохранения (пусто = <code>logs/syslog.log</code> в каталоге данных)</label>
+          <input class="control" id="messages_file_path" name="messages_file_path" type="text" placeholder="logs/syslog.log или /data/syslog.log" autocomplete="off" />
+        </div>
+      </div>
+      <div class="field check-row" style="flex:1 1 100%; align-items:center; margin-top:0.75rem">
+        <input type="checkbox" id="persist_to_file" name="persist_to_file" />
+        <label for="persist_to_file">Сохранять полученные сообщения в файл</label>
+      </div>
+      <div class="msg" id="form-msg"></div>
+      <p class="hint">
+        В Docker каталог данных — <code>/data</code> (том). Относительный путь считается от него.
+        В Docker через compose проброшен диапазон <strong>5000–5999</strong> (UDP/TCP) — выберите порт syslog в этом диапазоне или настройте проброс вручную.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="log-head">
+        <h2>Сообщения (в реальном времени)</h2>
+        <div class="btn-row">
+          <button type="button" class="btn-secondary" id="btn-export-txt" title="Скачать все сообщения из буфера (текст)">Скачать .txt</button>
+          <button type="button" class="btn-secondary" id="btn-export-json" title="Скачать все сообщения из буфера (JSON)">Скачать JSON</button>
+          <button type="button" class="btn-danger" id="btn-clear" title="Очистить буфер сообщений в памяти (файл на диске не трогается)">Очистить</button>
+          <span class="hint" id="ws-status">подключение…</span>
+        </div>
+      </div>
+      <pre id="log">Подключение к потоку…</pre>
+    </div>
+  </div>
+
+  <script>
+    const formMsg = document.getElementById("form-msg");
+    const logEl = document.getElementById("log");
+    const wsStatus = document.getElementById("ws-status");
+
+    const lines = [];
+    const maxLines = 2000;
+    const emptyHint =
+      "Пока нет сообщений. Тест UDP:\necho \"test udp\" | nc -u -w1 127.0.0.1 5514";
+
+    function pushLine(text) {
+      lines.push(text);
+      while (lines.length > maxLines) lines.shift();
+      logEl.textContent = lines.join("\n");
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function formatEntry(m) {
+      return `[${m.received_at}] ${m.protocol.toUpperCase()} ${m.remote} ${m.message}`;
+    }
+
+    function showEmpty() {
+      lines.length = 0;
+      logEl.textContent = emptyHint;
+    }
+
+    function connectWs() {
+      const proto = location.protocol === "https:" ? "wss" : "ws";
+      const ws = new WebSocket(`${proto}://${location.host}/ws/logs`);
+
+      ws.onopen = () => {
+        wsStatus.textContent = "WebSocket: подключено";
+        wsStatus.className = "hint ws-ok";
+      };
+
+      ws.onclose = () => {
+        wsStatus.textContent = "WebSocket: отключено, переподключение…";
+        wsStatus.className = "hint ws-bad";
+        setTimeout(connectWs, 2000);
+      };
+
+      ws.onerror = () => {
+        wsStatus.textContent = "WebSocket: ошибка";
+        wsStatus.className = "hint ws-bad";
+      };
+
+      ws.onmessage = (ev) => {
+        let data;
+        try {
+          data = JSON.parse(ev.data);
+        } catch {
+          return;
+        }
+        if (data.type === "history" && Array.isArray(data.entries)) {
+          lines.length = 0;
+          if (!data.entries.length) {
+            showEmpty();
+            return;
+          }
+          data.entries.forEach((e) => pushLine(formatEntry(e)));
+          return;
+        }
+        if (data.type === "cleared") {
+          showEmpty();
+          return;
+        }
+        if (data.type === "message" && data.entry) {
+          if (
+            lines.length === 0 &&
+            (logEl.textContent.startsWith("Подключение") ||
+              logEl.textContent === emptyHint)
+          ) {
+            lines.length = 0;
+            logEl.textContent = "";
+          }
+          pushLine(formatEntry(data.entry));
+        }
+      };
+    }
+
+    function triggerDownload(url) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    document.getElementById("btn-export-txt").addEventListener("click", () => {
+      triggerDownload("/api/messages/export?format=txt");
+    });
+
+    document.getElementById("btn-export-json").addEventListener("click", () => {
+      triggerDownload("/api/messages/export?format=json");
+    });
+
+    document.getElementById("btn-clear").addEventListener("click", async () => {
+      if (!confirm("Очистить все сообщения в буфере на сервере? (файл на диске не удаляется)")) {
+        return;
+      }
+      try {
+        const r = await fetch("/api/messages/clear", { method: "POST" });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          const d = data.detail || data.message || "ошибка";
+          throw new Error(typeof d === "string" ? d : JSON.stringify(d));
+        }
+        showEmpty();
+      } catch (err) {
+        alert(err.message || String(err));
+      }
+    });
+
+    let pathDebounceTimer = null;
+    let applySeq = 0;
+
+    function togglePathEnabled() {
+      const on = document.getElementById("persist_to_file").checked;
+      document.getElementById("messages_file_path").disabled = !on;
+    }
+
+    function buildConfigBody() {
+      return {
+        listen_port: parseInt(document.getElementById("listen_port").value, 10),
+        listen_protocol: document.getElementById("listen_protocol").value,
+        persist_to_file: document.getElementById("persist_to_file").checked,
+        messages_file_path: document.getElementById("messages_file_path").value.trim(),
+      };
+    }
+
+    async function applyConfig(reason) {
+      const myId = ++applySeq;
+      formMsg.textContent = "Применение…";
+      formMsg.className = "msg";
+      try {
+        const body = buildConfigBody();
+        if (Number.isNaN(body.listen_port) || body.listen_port < 1 || body.listen_port > 65535) {
+          throw new Error("Укажите порт от 1 до 65535");
+        }
+        const r = await fetch("/api/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          const d = data.detail || data.message || JSON.stringify(data);
+          throw new Error(typeof d === "string" ? d : JSON.stringify(d));
+        }
+        if (myId === applySeq) {
+          formMsg.textContent = reason ? `Применено (${reason})` : "Применено";
+          formMsg.className = "msg ok";
+        }
+      } catch (err) {
+        if (myId === applySeq) {
+          formMsg.textContent = err.message || String(err);
+          formMsg.className = "msg error";
+        }
+      }
+    }
+
+    async function loadConfig() {
+      const r = await fetch("/api/config");
+      if (!r.ok) throw new Error("config");
+      const c = await r.json();
+      document.getElementById("listen_port").value = c.listen_port;
+      document.getElementById("listen_protocol").value = c.listen_protocol;
+      document.getElementById("persist_to_file").checked = !!c.persist_to_file;
+      document.getElementById("messages_file_path").value =
+        c.messages_file_path != null ? String(c.messages_file_path) : "";
+      togglePathEnabled();
+    }
+
+    document.getElementById("listen_port").addEventListener("change", () => applyConfig("порт"));
+    document.getElementById("listen_protocol").addEventListener("change", () => applyConfig("протокол"));
+    document.getElementById("persist_to_file").addEventListener("change", () => {
+      togglePathEnabled();
+      applyConfig("запись в файл");
+    });
+
+    document.getElementById("messages_file_path").addEventListener("input", () => {
+      if (!document.getElementById("persist_to_file").checked) return;
+      clearTimeout(pathDebounceTimer);
+      pathDebounceTimer = setTimeout(() => applyConfig("путь к файлу"), 500);
+    });
+    document.getElementById("messages_file_path").addEventListener("change", () => {
+      if (!document.getElementById("persist_to_file").checked) return;
+      clearTimeout(pathDebounceTimer);
+      applyConfig("путь к файлу");
+    });
+
+    loadConfig().catch(() => {
+      formMsg.textContent = "Не удалось загрузить настройки.";
+      formMsg.className = "msg error";
+    });
+    connectWs();
+  </script>
+</body>
+</html>
