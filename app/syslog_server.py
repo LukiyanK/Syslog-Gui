@@ -111,8 +111,13 @@ class SyslogReceiver:
                 self._messages.popleft()
         cfg = self._config
         if cfg.persist_to_file:
-            path = resolve_messages_file_path(settings.data_dir, cfg.messages_file_path)
-            line = _format_log_line(entry)
+            path = resolve_messages_file_path(
+                settings.data_dir, cfg.messages_file_path, cfg.persist_format
+            )
+            if cfg.persist_format == "json":
+                line = json.dumps(entry.__dict__, ensure_ascii=False) + "\n"
+            else:
+                line = _format_log_line(entry)
 
             def _write() -> None:
                 _append_line_to_file(path, line)

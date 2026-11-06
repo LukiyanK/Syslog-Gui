@@ -159,13 +159,22 @@
       </div>
       <div class="row" style="margin-top:1rem">
         <div class="field" style="flex:1 1 100%">
-          <label for="messages_file_path">Файл для сохранения (пусто = <code>logs/syslog.log</code> в каталоге данных)</label>
+          <label for="messages_file_path">Файл для сохранения (пусто = <code>logs/syslog.log</code> или <code>logs/syslog.jsonl</code> в зависимости от формата)</label>
           <input class="control" id="messages_file_path" name="messages_file_path" type="text" placeholder="logs/syslog.log или абсолютный путь" autocomplete="off" />
         </div>
       </div>
       <div class="field check-row" style="flex:1 1 100%; align-items:center; margin-top:0.75rem">
         <input type="checkbox" id="persist_to_file" name="persist_to_file" />
         <label for="persist_to_file">Сохранять полученные сообщения в файл</label>
+      </div>
+      <div class="row listen-row" style="margin-top:0.75rem">
+        <div class="field">
+          <label for="persist_format">Формат сохранения</label>
+          <select class="control" id="persist_format" name="persist_format">
+            <option value="txt">Текст (табуляция)</option>
+            <option value="json">JSON Lines (одна запись в строке)</option>
+          </select>
+        </div>
       </div>
       <div class="msg" id="form-msg"></div>
       <p class="hint">
@@ -305,9 +314,10 @@
     let pathDebounceTimer = null;
     let applySeq = 0;
 
-    function togglePathEnabled() {
+    function togglePersistFileControls() {
       const on = document.getElementById("persist_to_file").checked;
       document.getElementById("messages_file_path").disabled = !on;
+      document.getElementById("persist_format").disabled = !on;
     }
 
     function buildConfigBody() {
@@ -315,6 +325,7 @@
         listen_port: parseInt(document.getElementById("listen_port").value, 10),
         listen_protocol: document.getElementById("listen_protocol").value,
         persist_to_file: document.getElementById("persist_to_file").checked,
+        persist_format: document.getElementById("persist_format").value,
         messages_file_path: document.getElementById("messages_file_path").value.trim(),
       };
     }
@@ -357,16 +368,22 @@
       document.getElementById("listen_port").value = c.listen_port;
       document.getElementById("listen_protocol").value = c.listen_protocol;
       document.getElementById("persist_to_file").checked = !!c.persist_to_file;
+      document.getElementById("persist_format").value =
+        c.persist_format === "json" ? "json" : "txt";
       document.getElementById("messages_file_path").value =
         c.messages_file_path != null ? String(c.messages_file_path) : "";
-      togglePathEnabled();
+      togglePersistFileControls();
     }
 
     document.getElementById("listen_port").addEventListener("change", () => applyConfig("порт"));
     document.getElementById("listen_protocol").addEventListener("change", () => applyConfig("протокол"));
     document.getElementById("persist_to_file").addEventListener("change", () => {
-      togglePathEnabled();
+      togglePersistFileControls();
       applyConfig("запись в файл");
+    });
+
+    document.getElementById("persist_format").addEventListener("change", () => {
+      applyConfig("формат файла");
     });
 
     document.getElementById("messages_file_path").addEventListener("input", () => {
